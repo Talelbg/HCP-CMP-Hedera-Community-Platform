@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Invoice, InvoiceStatus, DeveloperRecord, CommunityAgreement, PaymentModel, BillingCycle, Currency, PaymentMethod, InvoiceLineItem, AdminUser, UserRole } from '../types';
 import { Plus, Edit3, Trash2, Wallet, CreditCard, FileText, Check, AlertCircle, Save, Users, Award, TrendingUp, DollarSign, Calendar, Upload, File, X, Shield, Search, ChevronDown } from 'lucide-react';

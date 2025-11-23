@@ -1,4 +1,3 @@
-
 // 1.1 Hierarchy & Permissions
 export enum UserRole {
   SUPER_ADMIN = 'Super Admin (HQ)',

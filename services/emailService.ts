@@ -1,4 +1,3 @@
-
 import { DeveloperRecord, EmailTemplate } from '../types';
 
 // Default Templates

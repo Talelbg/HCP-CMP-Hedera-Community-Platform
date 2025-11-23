@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { DeveloperRecord } from '../types';
 import { AlertTriangle, CheckCircle, Clock, Search, Download, ChevronLeft, ChevronRight, Filter, Users, PlayCircle, Timer, X, ArrowLeft, Bug } from 'lucide-react';

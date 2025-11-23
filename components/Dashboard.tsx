@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Users, Award, Globe, Clock, AlertTriangle, Activity, Filter, BarChart2, Mail, Flag, Calendar, Check, Sparkles } from 'lucide-react';

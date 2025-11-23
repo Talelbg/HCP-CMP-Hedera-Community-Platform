@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef } from 'react';
 import { AdminUser, CommunityMasterRecord, DeveloperRecord, UserRole } from '../types';
 import { Users, Shield, Map, Upload, Search, Trash2, CheckCircle, AlertCircle, Plus, Save, FileSpreadsheet, X, Link, ChevronDown } from 'lucide-react';
@@ -238,7 +237,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ data, admins, setA
                   )}
 
                   <table className="w-full text-sm text-left">
-                      <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-700">
+                      <thead className="bg-slate-50 dark:bg-slate-800 text-slate-50 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-700">
                           <tr>
                               <th className="px-6 py-3">Admin User</th>
                               <th className="px-6 py-3">Role</th>

@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { DeveloperRecord, EmailTemplate, OutreachCampaign } from '../types';
 import { DEFAULT_TEMPLATES, sendEmailCampaign } from '../services/emailService';

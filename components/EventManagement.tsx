@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { Calendar, MapPin, Users, Search, Mail, Plus, Save, Video, Target, UserPlus, X, ExternalLink, Globe, AlertTriangle, Clock } from 'lucide-react';
 import { DeveloperRecord, CommunityEvent } from '../types';
@@ -386,7 +385,7 @@ export const EventManagement: React.FC<EventManagementProps> = ({ data, events, 
             </div>
             
             {/* Facilitators Section */}
-            <div className="px-6 py-3 bg-slate-50/50 dark:bg-white/5 border-t border-b border-slate-100 dark:border-white/5">
+            <div className="px-6 py-3 bg-slate-50/50 dark:bg-white/5 border-t border-slate-100 dark:border-white/5">
                  <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Facilitators</h5>
                  <div className="flex items-center gap-2">
                      {evt.facilitators.length > 0 ? evt.facilitators.map((f, i) => (

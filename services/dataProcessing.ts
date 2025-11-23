@@ -1,4 +1,3 @@
-
 import { DeveloperRecord, ChartDataPoint, MembershipMetrics, MembershipChartPoint } from '../types';
 
 // Helper to check if a date falls within a specific date range

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Users, Award, Filter, Calendar, Check, Crown, TrendingUp, UserCheck, ArrowLeft } from 'lucide-react';
@@ -250,46 +249,4 @@ export const MembershipDashboard: React.FC<MembershipDashboardProps> = ({ data, 
             {/* Funnel / Pie Chart */}
             <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <h3 className="font-bold text-slate-800 dark:text-white mb-2">Program Composition</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Ratio of Total Enrolled vs. Accepted Members</p>
-                <div className="h-64 w-full relative">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={funnelData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {funnelData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
-                                ))}
-                            </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: '#141319', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}/>
-                            <Legend verticalAlign="bottom" height={36}/>
-                        </PieChart>
-                    </ResponsiveContainer>
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                        <div className="text-2xl font-bold text-purple-600">{metrics.totalMembers}</div>
-                        <div className="text-xs text-slate-400 font-bold uppercase">Members</div>
-                    </div>
-                </div>
-                <div className="mt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-slate-500 dark:text-slate-400 flex items-center gap-2"><UserCheck className="w-4 h-4" /> Non-Members</span>
-                        <span className="font-bold text-slate-700 dark:text-slate-300">{metrics.totalEnrolled - metrics.totalMembers}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-purple-600 h-full" style={{ width: `${metrics.membershipRate}%` }}></div>
-                    </div>
-                    <div className="text-center text-xs text-purple-600 font-medium mt-1">
-                        {metrics.membershipRate.toFixed(1)}% Conversion Rate
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-  );
-};
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Ratio of Total Enrolled vs. Accepted Members</p
