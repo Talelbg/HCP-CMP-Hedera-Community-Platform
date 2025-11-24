@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { Shield, User as UserIcon, Calendar, Edit2, Search } from 'lucide-react';
+import { User as UserIcon, Calendar, Edit2, Search } from 'lucide-react';
+import Card from '../components/Card';
 
 interface UserData {
   id: string;
@@ -19,6 +20,7 @@ const AdminDashboard: React.FC = () => {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchUsers = async () => {
       if (role !== 'super_admin') return;
 
@@ -28,30 +30,35 @@ const AdminDashboard: React.FC = () => {
         querySnapshot.forEach((doc) => {
           usersList.push({ id: doc.id, ...doc.data() } as UserData);
         });
-        setUsers(usersList);
+        if (isMounted) {
+            setUsers(usersList);
+        }
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
-        setFetching(false);
+        if (isMounted) {
+            setFetching(false);
+        }
       }
     };
 
     if (!loading) {
       fetchUsers();
     }
+    return () => { isMounted = false; };
   }, [role, loading]);
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = useCallback(async (userId: string, newRole: string) => {
       try {
           await updateDoc(doc(db, 'users', userId), { role: newRole });
-          setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+          setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
           setEditingUserId(null);
       } catch (error) {
           console.error("Error updating role:", error);
       }
-  };
+  }, []); // Empty dependency array as it doesn't depend on external scope variables that change
 
-  if (loading) return null; // Layout handles global loading usually, or we can just render nothing while waiting
+  if (loading) return null;
 
   if (!user || role !== 'super_admin') {
     return <Navigate to="/" replace />;
@@ -60,7 +67,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
        {/* Header Section */}
-      <div className="bg-dar-panel rounded-2xl p-6 border border-dar-border">
+      <Card>
         <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                 User Management
@@ -74,10 +81,10 @@ const AdminDashboard: React.FC = () => {
                 <Search size={16} className="absolute left-3 top-2.5 text-gray-500" />
             </div>
         </div>
-      </div>
+      </Card>
 
       {/* Users Table */}
-      <div className="bg-dar-panel rounded-2xl border border-dar-border overflow-hidden">
+      <Card noPadding className="overflow-hidden">
         {fetching ? (
           <div className="flex justify-center p-12">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
@@ -160,7 +167,7 @@ const AdminDashboard: React.FC = () => {
                 </table>
             </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 };
