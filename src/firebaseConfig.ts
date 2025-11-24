@@ -1,10 +1,7 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
-import { getAnalytics } from "firebase/analytics";
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getDatabase } from 'firebase/database';
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyD2reN4qvBhUnHdep9LxS8ppG5xruU8ePw",
   authDomain: "hcp-cmp-platform.firebaseapp.com",
@@ -16,13 +13,6 @@ const firebaseConfig = {
   measurementId: "G-45NXTTJ5R9"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// Export Firebase services for use in components
-export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const storage = getStorage(app);
-export const analytics = getAnalytics(app);
-
-export default app;
+export const db = getDatabase(app);

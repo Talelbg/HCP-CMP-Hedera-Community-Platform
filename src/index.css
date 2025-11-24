@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .glass-panel, .glass-card {
+        @apply bg-white border border-slate-200 shadow-sm;
+    }
+    .dark .glass-panel {
+        @apply bg-slate-900/60 backdrop-blur-md border-white/10 shadow-xl;
+    }
+    .dark .glass-card {
+        @apply bg-gradient-to-br from-slate-800/40 to-slate-900/60 backdrop-blur-md border-white/5 shadow-xl;
+    }
+}
