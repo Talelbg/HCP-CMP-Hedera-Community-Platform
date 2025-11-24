@@ -3,16 +3,17 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Users, Award, Globe, Clock, AlertTriangle, Activity, Filter, BarChart2, Mail, Flag, Calendar, Check, Sparkles } from 'lucide-react';
 import { StatCard } from '../components/dashboard/StatCard';
 import { DashboardMetrics, DeveloperRecord, calculateDashboardMetrics, generateChartData, generateLeaderboard } from '../services/dataProcessing';
+import { subscriptionService } from '../services/subscriptionService';
 import { generateExecutiveSummary } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
-import { collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 // Types adapted for internal state
 type TimeframeOption = 'All Time' | 'This Year' | 'Last 90 Days' | 'Last 30 Days' | 'Custom Range';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [data, setData] = useState<DeveloperRecord[]>([]);
 
   // Metrics State
@@ -37,23 +38,39 @@ const Dashboard: React.FC = () => {
       pendingTimeframe !== activeTimeframe ||
       (pendingTimeframe === 'Custom Range' && (pendingStartDate !== activeStartDate || pendingEndDate !== activeEndDate));
 
-  // Fetch Data (Simulated or Real)
+  // Fetch Data
   useEffect(() => {
      const fetchData = async () => {
-         // In a real scenario, we fetch from Firestore
-         // For now, let's seed some dummy data if empty to show the UI
-         const dummyData: DeveloperRecord[] = Array.from({ length: 50 }).map((_, i) => ({
-             id: `user-${i}`,
-             partnerCode: i % 3 === 0 ? 'Hedera' : i % 3 === 1 ? 'Swirlds' : 'The HBAR Foundation',
-             registrationDate: new Date(2023, i % 12, (i * 2) % 28).toISOString(),
-             status: i % 4 === 0 ? 'Certified' : i % 2 === 0 ? 'In Progress' : 'Registered',
-             completionDate: i % 4 === 0 ? new Date(2023, i % 12, (i * 2) % 28 + 2).toISOString() : undefined,
-             score: i % 4 === 0 ? 80 + (i % 20) : undefined
-         }));
-         setData(dummyData);
+         if (!user) return;
+         try {
+             let partnerCodeFilter = 'All';
+
+             if (role === 'admin') { // Community Leader
+                 // Fetch assigned codes
+                 const userDoc = await getDoc(doc(db, 'users', user.uid));
+                 if (userDoc.exists()) {
+                     const userData = userDoc.data();
+                     const codes = userData.assignedCodes || [];
+                     if (codes.length > 0) {
+                         partnerCodeFilter = codes[0];
+                     }
+                 }
+             }
+
+             // Sync filters if forced by role
+             if (partnerCodeFilter !== 'All') {
+                 setActiveCommunity(partnerCodeFilter);
+                 setPendingCommunity(partnerCodeFilter);
+             }
+
+             const records = await subscriptionService.getSubscriptions(partnerCodeFilter);
+             setData(records);
+         } catch (error) {
+             console.error("Failed to load dashboard data", error);
+         }
      };
      fetchData();
-  }, []);
+  }, [user, role]);
 
   // Date Calculation
   const calculatedDateRange = useMemo(() => {
@@ -193,11 +210,16 @@ const Dashboard: React.FC = () => {
                     <select
                         value={pendingCommunity}
                         onChange={(e) => setPendingCommunity(e.target.value)}
-                        className="pl-10 pr-10 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm font-medium text-white focus:ring-2 focus:ring-[#2a00ff] focus:border-transparent outline-none appearance-none w-full xl:w-64 cursor-pointer hover:border-slate-500 transition-colors shadow-sm"
+                        disabled={role !== 'super_admin'}
+                        className="pl-10 pr-10 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm font-medium text-white focus:ring-2 focus:ring-[#2a00ff] focus:border-transparent outline-none appearance-none w-full xl:w-64 cursor-pointer hover:border-slate-500 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {communities.map(c => (
-                            <option key={c} value={c}>{c === 'All' ? 'Global (All)' : c}</option>
-                        ))}
+                        {role === 'super_admin' ? (
+                            communities.map(c => (
+                                <option key={c} value={c}>{c === 'All' ? 'Global (All)' : c}</option>
+                            ))
+                        ) : (
+                             <option value={activeCommunity}>{activeCommunity}</option>
+                        )}
                     </select>
                 </div>
              </div>

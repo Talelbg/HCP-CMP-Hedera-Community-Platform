@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Subscriptions from './pages/Subscriptions';
+import ImportData from './pages/ImportData';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 
@@ -45,6 +47,22 @@ const AppRoutes = () => {
             element={
                 <ProtectedRoute>
                 <Dashboard />
+                </ProtectedRoute>
+            }
+            />
+            <Route
+            path="/subscriptions"
+            element={
+                <ProtectedRoute>
+                <Subscriptions />
+                </ProtectedRoute>
+            }
+            />
+             <Route
+            path="/import"
+            element={
+                <ProtectedRoute>
+                <ImportData />
                 </ProtectedRoute>
             }
             />

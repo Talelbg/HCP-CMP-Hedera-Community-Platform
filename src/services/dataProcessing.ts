@@ -1,3 +1,5 @@
+import { DeveloperRecord } from '../types';
+
 // Types for the metrics
 export interface DashboardMetrics {
   totalRegistered: number;
@@ -13,50 +15,50 @@ export interface DashboardMetrics {
   rapidCompletions: number;
 }
 
-export interface DeveloperRecord {
-  id: string;
-  partnerCode: string;
-  registrationDate: string; // ISO string
-  completionDate?: string; // ISO string
-  status: 'Registered' | 'In Progress' | 'Certified' | 'Flagged';
-  score?: number;
-}
+// Re-export DeveloperRecord from main types
+export type { DeveloperRecord } from '../types';
 
 export const calculateDashboardMetrics = (data: DeveloperRecord[], start: Date | null, end: Date | null): DashboardMetrics => {
     // Filter by date if provided
     const filteredData = data.filter(d => {
-        const dDate = new Date(d.registrationDate);
+        const dDate = new Date(d.createdAt); // Use createdAt
         if (start && dDate < start) return false;
         if (end && dDate > end) return false;
         return true;
     });
 
     const totalRegistered = filteredData.length;
-    const certifiedUsers = filteredData.filter(d => d.status === 'Certified');
+    // Map existing fields to "status" logic
+    // Certified if finalGrade == 'Pass'
+    const certifiedUsers = filteredData.filter(d => d.finalGrade === 'Pass');
     const totalCertified = certifiedUsers.length;
 
-    const usersStarted = filteredData.filter(d => d.status === 'In Progress' || d.status === 'Certified');
+    // Started if percentageCompleted > 0
+    const usersStarted = filteredData.filter(d => d.percentageCompleted > 0);
     const usersStartedCourse = usersStarted.length;
 
     // Average Completion Time
     let totalTime = 0;
     let completedCount = 0;
     certifiedUsers.forEach(u => {
-        if (u.completionDate && u.registrationDate) {
-            const diff = new Date(u.completionDate).getTime() - new Date(u.registrationDate).getTime();
+        if (u.completedAt && u.createdAt) {
+            const diff = new Date(u.completedAt).getTime() - new Date(u.createdAt).getTime();
             totalTime += diff;
             completedCount++;
         }
     });
     const avgCompletionTimeDays = completedCount > 0 ? (totalTime / (1000 * 60 * 60 * 24)) / completedCount : 0;
 
-    // Fake Accounts (Mock logic: < 1 day completion or specific flag)
-    const flagged = filteredData.filter(d => d.status === 'Flagged');
+    // Fake Accounts (Mock logic: < 5 hours completion or suspicious)
+    // d.caStatus might have flags in future, using simple time heuristic
     const rapid = certifiedUsers.filter(u => {
-         if (!u.completionDate) return false;
-         const hours = (new Date(u.completionDate).getTime() - new Date(u.registrationDate).getTime()) / (1000 * 60 * 60);
+         if (!u.completedAt) return false;
+         const hours = (new Date(u.completedAt).getTime() - new Date(u.createdAt).getTime()) / (1000 * 60 * 60);
          return hours < 5;
     });
+
+    // Check for suspicious flags in caStatus if any
+    const flagged = filteredData.filter(d => d.caStatus && d.caStatus.toLowerCase().includes('flag'));
 
     const uniqueCommunities = new Set(filteredData.map(d => d.partnerCode));
 
@@ -82,21 +84,21 @@ export const generateChartData = (data: DeveloperRecord[], start: Date | null, e
     const buckets: Record<string, { registrations: number, certifications: number }> = {};
 
     const filteredData = data.filter(d => {
-        const dDate = new Date(d.registrationDate);
+        const dDate = new Date(d.createdAt);
         if (start && dDate < start) return false;
         if (end && dDate > end) return false;
         return true;
     });
 
     filteredData.forEach(d => {
-        const date = new Date(d.registrationDate);
+        const date = new Date(d.createdAt);
         const key = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`; // e.g., "Oct 2023"
 
         if (!buckets[key]) buckets[key] = { registrations: 0, certifications: 0 };
         buckets[key].registrations++;
 
-        if (d.status === 'Certified' && d.completionDate) {
-             const cDate = new Date(d.completionDate);
+        if (d.finalGrade === 'Pass' && d.completedAt) {
+             const cDate = new Date(d.completedAt);
              const cKey = `${cDate.toLocaleString('default', { month: 'short' })} ${cDate.getFullYear()}`;
              if (!buckets[cKey]) buckets[cKey] = { registrations: 0, certifications: 0 };
              buckets[cKey].certifications++;
@@ -111,7 +113,7 @@ export const generateChartData = (data: DeveloperRecord[], start: Date | null, e
 
 export const generateLeaderboard = (data: DeveloperRecord[]) => {
     const counts: Record<string, number> = {};
-    data.filter(d => d.status === 'Certified').forEach(d => {
+    data.filter(d => d.finalGrade === 'Pass').forEach(d => {
         counts[d.partnerCode] = (counts[d.partnerCode] || 0) + 1;
     });
 
