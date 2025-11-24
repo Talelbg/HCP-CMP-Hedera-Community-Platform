@@ -1,4 +1,4 @@
-import { DeveloperRecord, UserRole, AdminUser } from './types';
+import { DeveloperRecord, UserRole, AdminUser } from './src/types';
 
 export const CURRENT_USER_ROLE = UserRole.SUPER_ADMIN;
 

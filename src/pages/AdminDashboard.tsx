@@ -3,13 +3,14 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { Shield, User as UserIcon, Calendar, Edit2 } from 'lucide-react';
+import { Shield, User as UserIcon, Calendar, Edit2, Save, X } from 'lucide-react';
 
 interface UserData {
   id: string;
   email: string;
   role: string;
   createdAt?: string;
+  assignedCodes?: string[];
 }
 
 const AdminDashboard: React.FC = () => {
@@ -17,6 +18,7 @@ const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [fetching, setFetching] = useState(true);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ role: string, assignedCodes: string }>({ role: '', assignedCodes: '' });
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -41,13 +43,35 @@ const AdminDashboard: React.FC = () => {
     }
   }, [role, loading]);
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const startEditing = (userData: UserData) => {
+      setEditingUserId(userData.id);
+      setEditForm({
+          role: userData.role,
+          assignedCodes: userData.assignedCodes ? userData.assignedCodes.join(', ') : ''
+      });
+  };
+
+  const cancelEditing = () => {
+      setEditingUserId(null);
+      setEditForm({ role: '', assignedCodes: '' });
+  };
+
+  const handleSave = async (userId: string) => {
       try {
-          await updateDoc(doc(db, 'users', userId), { role: newRole });
-          setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
-          setEditingUserId(null);
+          const codesArray = editForm.assignedCodes
+              .split(',')
+              .map(s => s.trim())
+              .filter(s => s.length > 0);
+
+          await updateDoc(doc(db, 'users', userId), {
+              role: editForm.role,
+              assignedCodes: codesArray
+          });
+
+          setUsers(users.map(u => u.id === userId ? { ...u, role: editForm.role, assignedCodes: codesArray } : u));
+          cancelEditing();
       } catch (error) {
-          console.error("Error updating role:", error);
+          console.error("Error updating user:", error);
       }
   };
 
@@ -71,7 +95,7 @@ const AdminDashboard: React.FC = () => {
             <Shield className="h-8 w-8 text-primary" />
             Super Admin Dashboard
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Manage users and roles.</p>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Manage users, roles, and community assignments.</p>
         </header>
 
         {fetching ? (
@@ -88,6 +112,9 @@ const AdminDashboard: React.FC = () => {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Role
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Assigned Communities
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Joined Date
@@ -116,12 +143,12 @@ const AdminDashboard: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                        {editingUserId === userData.id && userData.email !== 'talelbenghorbel@gmail.com' ? (
                            <select
-                             value={userData.role}
-                             onChange={(e) => handleRoleChange(userData.id, e.target.value)}
+                             value={editForm.role}
+                             onChange={(e) => setEditForm({...editForm, role: e.target.value})}
                              className="text-sm rounded border-gray-300 dark:border-gray-700 bg-white dark:bg-dark focus:ring-primary focus:border-primary px-2 py-1"
                            >
                                <option value="user">User</option>
-                               <option value="admin">Admin</option>
+                               <option value="admin">Admin (Leader)</option>
                                <option value="super_admin">Super Admin</option>
                            </select>
                        ) : (
@@ -130,9 +157,24 @@ const AdminDashboard: React.FC = () => {
                             userData.role === 'admin' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
                             'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                           }`}>
-                            {userData.role}
+                            {userData.role === 'admin' ? 'Leader' : userData.role}
                           </span>
                        )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {editingUserId === userData.id && userData.role !== 'super_admin' ? (
+                            <input
+                                type="text"
+                                placeholder="e.g. DAR-BLOCKCHAIN, HEDERA"
+                                value={editForm.assignedCodes}
+                                onChange={(e) => setEditForm({...editForm, assignedCodes: e.target.value})}
+                                className="w-full text-sm rounded border-gray-300 dark:border-gray-700 bg-white dark:bg-dark focus:ring-primary focus:border-primary px-2 py-1"
+                            />
+                        ) : (
+                            userData.assignedCodes && userData.assignedCodes.length > 0
+                            ? <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs">{userData.assignedCodes.join(', ')}</span>
+                            : <span className="text-gray-400 italic">None</span>
+                        )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         <div className="flex items-center gap-2">
@@ -142,12 +184,19 @@ const AdminDashboard: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {userData.email !== 'talelbenghorbel@gmail.com' && (
-                             <button
-                                onClick={() => setEditingUserId(userData.id === editingUserId ? null : userData.id)}
-                                className="text-primary hover:text-indigo-900 dark:hover:text-indigo-400 transition-colors"
-                             >
-                                <Edit2 size={16} />
-                             </button>
+                             editingUserId === userData.id ? (
+                                 <div className="flex justify-end gap-2">
+                                     <button onClick={() => handleSave(userData.id)} className="text-green-600 hover:text-green-800"><Save size={18} /></button>
+                                     <button onClick={cancelEditing} className="text-red-500 hover:text-red-700"><X size={18} /></button>
+                                 </div>
+                             ) : (
+                                 <button
+                                    onClick={() => startEditing(userData)}
+                                    className="text-primary hover:text-indigo-900 dark:hover:text-indigo-400 transition-colors"
+                                 >
+                                    <Edit2 size={16} />
+                                 </button>
+                             )
                         )}
                     </td>
                   </tr>

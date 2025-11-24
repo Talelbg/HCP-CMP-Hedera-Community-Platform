@@ -1,20 +1,18 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Calendar, ShieldAlert, Send, Crown, BarChart } from 'lucide-react';
+import { LayoutDashboard, Users, ShieldAlert, Upload, List } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { role } = useAuth();
 
   const navItems = [
     { id: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: '/membership', label: 'Membership', icon: Crown },
-    { id: '/developers', label: 'Developers & Fraud', icon: Users },
-    { id: '/outreach', label: 'Smart Outreach', icon: Send },
-    { id: '/invoices', label: 'Finance & Invoices', icon: FileText },
-    { id: '/reporting', label: 'Reporting & AI', icon: BarChart },
-    { id: '/events', label: 'Event Management', icon: Calendar },
-    { id: '/admin', label: 'Admin Settings', icon: ShieldAlert },
+    { id: '/subscriptions', label: 'Subscriptions', icon: List },
+    { id: '/import', label: 'Import Data', icon: Upload },
+    { id: '/admin', label: 'Admin & Leaders', icon: ShieldAlert, allowedRoles: ['super_admin'] },
   ];
 
   return (
@@ -38,6 +36,9 @@ export const Sidebar: React.FC = () => {
       {/* Navigation */}
       <nav className="flex-1 py-8 space-y-2 px-4 relative z-10 overflow-y-auto">
         {navItems.map((item) => {
+          if (item.allowedRoles && (!role || !item.allowedRoles.includes(role))) {
+              return null;
+          }
           const isActive = location.pathname === item.id;
           return (
             <button
@@ -64,13 +65,15 @@ export const Sidebar: React.FC = () => {
       <div className="p-6 border-t border-white/5 bg-[#141319] relative z-10">
         <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border border-white/5 group">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#2a00ff] to-[#791cf5] flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-[#2a00ff]/30">
-            SA
+            {role === 'super_admin' ? 'SA' : role === 'admin' ? 'CL' : 'U'}
           </div>
           <div>
-            <p className="text-sm font-bold text-white group-hover:text-[#a522dd] transition-colors">Super Admin</p>
+            <p className="text-sm font-bold text-white group-hover:text-[#a522dd] transition-colors">
+                {role === 'super_admin' ? 'Super Admin' : role === 'admin' ? 'Leader' : 'User'}
+            </p>
             <div className="flex items-center gap-1.5 mt-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Global HQ</p>
+                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Online</p>
             </div>
           </div>
         </div>
