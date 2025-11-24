@@ -16,13 +16,15 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <div className="hidden lg:flex w-72 bg-[#141319] border-r border-white/5 flex-col h-screen fixed left-0 top-0 z-50 shadow-2xl relative overflow-hidden">
+    <>
+    {/* Mobile Toggle would go here, omitting for desktop-first request */}
+    <div className="hidden lg:flex w-72 bg-[#141319] border-r border-white/5 flex-col h-screen fixed left-0 top-0 z-[100] shadow-2xl overflow-hidden">
       {/* Background Glow Effect */}
       <div className="absolute top-0 left-0 w-full h-96 bg-[#2a00ff]/10 blur-[100px] pointer-events-none"></div>
 
       {/* Brand Header */}
-      <div className="h-28 flex items-center px-8 border-b border-white/5 relative z-10">
-        <div className="relative group cursor-pointer flex items-center gap-3">
+      <div className="h-28 flex items-center px-8 border-b border-white/5 relative z-10 cursor-pointer" onClick={() => navigate('/dashboard')}>
+        <div className="relative group flex items-center gap-3">
             {/* Dar Blockchain Logo Shape */}
             <svg width="40" height="40" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
                 <path d="M10 25H0V45C0 47.7614 2.23858 50 5 50H15V25C15 19.4772 19.4772 15 25 15C30.5228 15 35 19.4772 35 25V50H45C47.7614 50 50 47.7614 50 45V25C50 11.1929 38.8071 0 25 0H15V10C15 12.7614 12.7614 15 10 15V25Z" fill="#2a00ff"/>
@@ -43,8 +45,11 @@ export const Sidebar: React.FC = () => {
           return (
             <button
               key={item.id}
-              onClick={() => navigate(item.id)}
-              className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 relative group overflow-hidden ${
+              onClick={() => {
+                  console.log("Navigating to", item.id);
+                  navigate(item.id);
+              }}
+              className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 relative group overflow-hidden cursor-pointer ${
                 isActive
                   ? 'text-white shadow-[0_0_20px_rgba(42,0,255,0.25)]'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -79,5 +84,6 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };

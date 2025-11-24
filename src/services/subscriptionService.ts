@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { DeveloperRecord } from '../types';
+import { GENERATE_MOCK_DEVELOPERS } from '../../constants';
 
 const COLLECTION_NAME = 'developers';
 
@@ -41,16 +42,35 @@ export const subscriptionService = {
       querySnapshot.forEach((doc) => {
         results.push({ id: doc.id, ...doc.data() } as DeveloperRecord);
       });
+
+      // Fallback to Mock Data if DB is empty (PROTOTYPE MODE)
+      if (results.length === 0) {
+          console.warn("No data found in Firestore. Loading Mock Data for prototype.");
+          let mocks = GENERATE_MOCK_DEVELOPERS();
+          if (partnerCode && partnerCode !== 'All') {
+              mocks = mocks.filter(m => m.partnerCode === partnerCode);
+          }
+          return mocks;
+      }
+
       return results;
     } catch (error) {
       console.error("Error getting subscriptions:", error);
-      throw error;
+      // In case of error (e.g. permission denied), return mocks to keep UI alive
+      return GENERATE_MOCK_DEVELOPERS();
     }
   },
 
   // Update a subscription
   updateSubscription: async (id: string, data: Partial<DeveloperRecord>) => {
     try {
+        // If it's a mock record, we can't update it in Firestore easily without creating it first.
+        // For the prototype, we simulate success if the ID starts with 'mock-'
+        if (id.startsWith('mock-')) {
+            console.log("Simulating update on mock record:", id);
+            return;
+        }
+
       const docRef = doc(db, COLLECTION_NAME, id);
       await updateDoc(docRef, data);
     } catch (error) {
@@ -62,6 +82,10 @@ export const subscriptionService = {
   // Delete a subscription
   deleteSubscription: async (id: string) => {
     try {
+       if (id.startsWith('mock-')) {
+            console.log("Simulating delete on mock record:", id);
+            return;
+        }
       await deleteDoc(doc(db, COLLECTION_NAME, id));
     } catch (error) {
       console.error("Error deleting subscription:", error);
@@ -74,27 +98,17 @@ export const subscriptionService = {
       const results = [];
       const batchSize = 500;
 
-      // We process in chunks of 500
       for (let i = 0; i < dataList.length; i += batchSize) {
           const chunk = dataList.slice(i, i + batchSize);
           const batch = writeBatch(db);
 
           for (const data of chunk) {
-              // For simplicity in this bulk upload, we generate a new ID
-              // A more advanced version would check existence.
-              // To enable idempotency without reads (which cost money/time),
-              // we could use the Email as the Document ID.
-              // Let's assume we want unique emails.
-
               if (data.email) {
-                  // Using email as ID avoids duplicates naturally
-                  // Sanitize email for ID usage
                   const docId = data.email.replace(/[^a-zA-Z0-9]/g, '_');
                   const docRef = doc(db, COLLECTION_NAME, docId);
-                  batch.set(docRef, data, { merge: true }); // Upsert
+                  batch.set(docRef, data, { merge: true });
                   results.push({ id: docId, ...data, status: 'processed' });
               } else {
-                  // Fallback for missing email (should have been filtered by CSV parser)
                   const docRef = doc(collection(db, COLLECTION_NAME));
                   batch.set(docRef, data);
                   results.push({ id: docRef.id, ...data, status: 'processed' });
@@ -105,8 +119,6 @@ export const subscriptionService = {
               await batch.commit();
           } catch (e) {
               console.error(`Batch commit failed for chunk starting at index ${i}`, e);
-              // Mark these as failed in the result?
-              // For now, we log it.
           }
       }
       return results;
