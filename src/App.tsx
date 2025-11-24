@@ -2,8 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import { auth } from './firebaseConfig';
-import { useAuthState } from 'react-firebase-hooks/auth';
+import AdminDashboard from './pages/AdminDashboard';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Simple loading component
 const Loading = () => (
@@ -14,7 +14,7 @@ const Loading = () => (
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const [user, loading] = useAuthState(auth);
+  const { user, loading } = useAuth();
 
   if (loading) return <Loading />;
 
@@ -25,22 +25,38 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AppRoutes = () => {
+    return (
+        <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+            path="/dashboard"
+            element={
+                <ProtectedRoute>
+                <Dashboard />
+                </ProtectedRoute>
+            }
+            />
+            <Route
+            path="/admin"
+            element={
+                <ProtectedRoute>
+                <AdminDashboard />
+                </ProtectedRoute>
+            }
+            />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+    );
+};
+
 const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+        <Router>
+            <AppRoutes />
+        </Router>
+    </AuthProvider>
   );
 };
 

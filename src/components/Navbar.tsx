@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, LogOut, LayoutDashboard, User } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, User, Shield } from 'lucide-react';
 import { auth } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { role } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -21,6 +23,10 @@ const Navbar: React.FC = () => {
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
   ];
+
+  if (role === 'super_admin') {
+      navItems.push({ name: 'Admin', path: '/admin', icon: <Shield size={20} /> });
+  }
 
   const isActive = (path: string) => location.pathname === path;
 
