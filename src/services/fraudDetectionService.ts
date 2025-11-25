@@ -1,5 +1,23 @@
 import { DeveloperRecord } from '../types';
 
+// Configuration constants for fraud detection
+const MS_PER_HOUR = 3600000;
+const THRESHOLDS = {
+  BOT_HOURS: 0.5,      // < 30 minutes
+  SPEED_RUN_HOURS: 4,  // < 4 hours  
+  RAPID_HOURS: 5,      // < 5 hours
+};
+const RISK_SCORES = {
+  EMAIL_ALIAS: 15,
+  DISPOSABLE_EMAIL: 40,
+  BOT_ACTIVITY: 60,
+  SPEED_RUN: 30,
+  RAPID_COMPLETION: 15,
+  CA_FLAGGED: 25,
+  SYBIL: 35,
+};
+
+// Known disposable email domains (extend as needed)
 const DISPOSABLE_DOMAINS = ['yopmail.com', 'tempmail.com', 'guerrillamail.com', 'mailinator.com', '10minutemail.com'];
 
 export interface FraudCheckResult {
@@ -11,7 +29,7 @@ export interface FraudCheckResult {
 // Check completion time in hours
 const getHours = (start: string, end: string | null): number | null => {
   if (!end) return null;
-  return (new Date(end).getTime() - new Date(start).getTime()) / 3600000;
+  return (new Date(end).getTime() - new Date(start).getTime()) / MS_PER_HOUR;
 };
 
 // Perform fraud check on a single record
@@ -20,20 +38,20 @@ export const performFraudCheck = (record: Omit<DeveloperRecord, 'id'>): FraudChe
   let score = 0;
 
   // Email checks
-  if (record.email.includes('+')) { flags.push('Email alias'); score += 15; }
+  if (record.email.includes('+')) { flags.push('Email alias'); score += RISK_SCORES.EMAIL_ALIAS; }
   const domain = record.email.split('@')[1]?.toLowerCase();
-  if (domain && DISPOSABLE_DOMAINS.includes(domain)) { flags.push('Disposable email'); score += 40; }
+  if (domain && DISPOSABLE_DOMAINS.includes(domain)) { flags.push('Disposable email'); score += RISK_SCORES.DISPOSABLE_EMAIL; }
 
   // Speed checks
   const hours = getHours(record.createdAt, record.completedAt);
   if (hours !== null) {
-    if (hours < 0.5) { flags.push('Bot activity (<30min)'); score += 60; }
-    else if (hours < 4) { flags.push('Speed run (<4h)'); score += 30; }
-    else if (hours < 5) { flags.push('Rapid completion'); score += 15; }
+    if (hours < THRESHOLDS.BOT_HOURS) { flags.push('Bot activity (<30min)'); score += RISK_SCORES.BOT_ACTIVITY; }
+    else if (hours < THRESHOLDS.SPEED_RUN_HOURS) { flags.push('Speed run (<4h)'); score += RISK_SCORES.SPEED_RUN; }
+    else if (hours < THRESHOLDS.RAPID_HOURS) { flags.push('Rapid completion'); score += RISK_SCORES.RAPID_COMPLETION; }
   }
 
   // CA Status flag
-  if (record.caStatus?.toLowerCase().includes('flag')) { flags.push('CA flagged'); score += 25; }
+  if (record.caStatus?.toLowerCase().includes('flag')) { flags.push('CA flagged'); score += RISK_SCORES.CA_FLAGGED; }
 
   return {
     isSuspicious: flags.length > 0,
@@ -68,7 +86,7 @@ export const enrichRecordsWithFraudDetection = (
     
     if (sybilCount && sybilCount > 1) {
       result.isSuspicious = true;
-      result.riskScore = Math.min(result.riskScore + 35, 100);
+      result.riskScore = Math.min(result.riskScore + RISK_SCORES.SYBIL, 100);
       result.suspicionReason = result.suspicionReason 
         ? `${result.suspicionReason}; Sybil (${sybilCount} accounts)` 
         : `Sybil (${sybilCount} accounts)`;
