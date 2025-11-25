@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Info, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
@@ -46,7 +47,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, t
           <h3 className={`text-3xl font-extrabold tracking-tight ${
               alert 
                 ? 'text-red-600 dark:text-red-400' 
-                : 'text-slate-900 dark:text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-slate-300 transition-all'
+                : 'text-slate-900 dark:text-white group-hover:text-[#2a00ff] dark:group-hover:text-transparent dark:group-hover:bg-clip-text dark:group-hover:bg-gradient-to-r dark:group-hover:from-white dark:group-hover:to-slate-300 transition-all'
           }`}>
               {value}
           </h3>

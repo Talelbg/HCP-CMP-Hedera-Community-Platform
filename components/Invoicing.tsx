@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Invoice, InvoiceStatus, DeveloperRecord, CommunityAgreement, PaymentModel, BillingCycle, Currency, PaymentMethod, InvoiceLineItem, AdminUser, UserRole } from '../types';
-import { Plus, Edit3, Trash2, Wallet, CreditCard, FileText, Check, AlertCircle, Save, Users, Award, TrendingUp, DollarSign, Calendar, Upload, File, X, Shield, Search, ChevronDown } from 'lucide-react';
+import { Plus, Edit3, Trash2, Wallet, CreditCard, FileText, Check, AlertCircle, Save, Users, Award, TrendingUp, DollarSign, Calendar, Upload, File, X, Shield, Search, ChevronDown, ExternalLink, Paperclip } from 'lucide-react';
 
 interface InvoicingProps {
     data: DeveloperRecord[];
@@ -196,7 +196,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 dark:bg-white/5 p-6 rounded-xl border border-slate-200 dark:border-white/5">
                           {['issueDate', 'dueDate'].map(f => (
                               <div key={f}>
-                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">{f}</label>
+                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">{f.replace(/([A-Z])/g, ' $1').trim()}</label>
                                   <input type="date" value={(inv as any)[f]} onChange={e => updateInvoice({ [f]: e.target.value })} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-[#2a00ff] outline-none shadow-sm" />
                               </div>
                           ))}
@@ -211,7 +211,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                           <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-4">Line Items</h4>
                           <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                               <table className="w-full text-sm text-left">
-                                  <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700"><tr><th className="px-4 py-3">Description</th><th className="px-4 py-3 w-24">Qty</th><th className="px-4 py-3 w-32 text-right">Price</th><th className="px-4 py-3 w-32 text-right">Total</th><th className="w-10"></th></tr></thead>
+                                  <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700"><tr><th className="px-4 py-3">Description</th><th className="px-4 py-3 w-24">Qty</th><th className="px-4 py-3 w-32 text-right">Price</th><th className="px-4 py-3 w-32 text-right">Total</th><th className="w-10"></th></tr></thead>
                                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700">{inv.items.map(item => (
                                       <tr key={item.id} className="bg-white dark:bg-slate-900">
                                           <td className="p-3"><input value={item.description} onChange={e => updateLineItem(item.id, 'description', e.target.value)} className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white focus:border-[#2a00ff] outline-none" /></td>
@@ -229,8 +229,8 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                       {/* Totals */}
                       <div className="flex justify-end">
                           <div className="w-64 space-y-3">
-                              <div className="flex justify-between text-sm text-slate-700 dark:text-slate-400"><span>Subtotal</span><span>{inv.subtotal.toLocaleString()} {inv.currency}</span></div>
-                              <div className="flex justify-between items-center text-sm text-slate-700 dark:text-slate-400"><span>Tax Rate (%)</span><input type="number" value={inv.taxRate} onChange={e => updateInvoice({ taxRate: Number(e.target.value) })} className="w-16 p-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-center text-slate-900 dark:text-white" /></div>
+                              <div className="flex justify-between text-sm text-slate-900 dark:text-slate-400 font-medium"><span>Subtotal</span><span>{inv.subtotal.toLocaleString()} {inv.currency}</span></div>
+                              <div className="flex justify-between items-center text-sm text-slate-900 dark:text-slate-400 font-medium"><span>Tax Rate (%)</span><input type="number" value={inv.taxRate} onChange={e => updateInvoice({ taxRate: Number(e.target.value) })} className="w-16 p-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-center text-slate-900 dark:text-white font-bold" /></div>
                               <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between text-xl font-bold text-slate-900 dark:text-white"><span>Total</span><span className="text-[#2a00ff] dark:text-cyan-400 dark:text-shadow-glow">{inv.totalAmount.toLocaleString()} {inv.currency}</span></div>
                           </div>
                       </div>
@@ -244,8 +244,8 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
     <div className="space-y-8 fade-in-up">
       <div className="glass-panel p-6 rounded-2xl flex flex-wrap gap-4 items-center bg-white dark:bg-[#1c1b22]">
          <div className="flex border-r border-slate-200 dark:border-white/10 pr-4 gap-2">
-            <button onClick={() => setActiveTab('invoices')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'invoices' ? 'bg-[#2a00ff] text-white shadow-lg shadow-[#2a00ff]/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'}`}>Invoices</button>
-            <button onClick={() => { setActiveTab('partners'); setSelectedPartnerCode(null); }} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'partners' ? 'bg-[#2a00ff] text-white shadow-lg shadow-[#2a00ff]/30' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'}`}>Partners</button>
+            <button onClick={() => setActiveTab('invoices')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'invoices' ? 'bg-[#2a00ff] text-white shadow-lg shadow-[#2a00ff]/30' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'}`}>Invoices</button>
+            <button onClick={() => { setActiveTab('partners'); setSelectedPartnerCode(null); }} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'partners' ? 'bg-[#2a00ff] text-white shadow-lg shadow-[#2a00ff]/30' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'}`}>Partners & Agreements</button>
          </div>
          {activeTab === 'invoices' && (
              <>
@@ -262,9 +262,9 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
       {activeTab === 'invoices' && (
           <div className="glass-card rounded-2xl overflow-hidden bg-white dark:bg-transparent border border-slate-200 dark:border-white/5">
               <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-white/5"><tr><th className="px-6 py-4">Invoice #</th><th className="px-6 py-4">Partner</th><th className="px-6 py-4">Date</th><th className="px-6 py-4">Amount</th><th className="px-6 py-4">Status</th><th className="px-6 py-4 text-right">Edit</th></tr></thead>
+                  <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-white/5"><tr><th className="px-6 py-4">Invoice #</th><th className="px-6 py-4">Partner</th><th className="px-6 py-4">Date</th><th className="px-6 py-4">Amount</th><th className="px-6 py-4">Status</th><th className="px-6 py-4 text-right">Edit</th></tr></thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/5">{invoices.length === 0 ? <tr><td colSpan={6} className="p-12 text-center text-slate-500">No invoices found. Generate a draft above.</td></tr> : invoices.map(inv => (
-                      <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"><td className="px-6 py-4 font-mono text-slate-600 dark:text-slate-400">{inv.invoiceNumber}</td><td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{inv.partnerCode}</td><td className="px-6 py-4 text-slate-500 dark:text-slate-400">{inv.issueDate}</td><td className="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400">{inv.totalAmount.toLocaleString()} {inv.currency}</td><td className="px-6 py-4"><span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs font-bold text-slate-600 dark:text-slate-300">{inv.status}</span></td><td className="px-6 py-4 text-right"><button onClick={() => setIsEditingInvoice(inv.id)} className="p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded hover:border-cyan-500 text-slate-400 hover:text-cyan-500 transition-colors"><Edit3 className="w-4 h-4" /></button></td></tr>
+                      <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"><td className="px-6 py-4 font-mono text-slate-600 dark:text-slate-400">{inv.invoiceNumber}</td><td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{inv.partnerCode}</td><td className="px-6 py-4 text-slate-600 dark:text-slate-400">{inv.issueDate}</td><td className="px-6 py-4 font-bold text-emerald-700 dark:text-emerald-400">{inv.totalAmount.toLocaleString()} {inv.currency}</td><td className="px-6 py-4"><span className={`px-2 py-1 border rounded text-xs font-bold ${inv.status === InvoiceStatus.PAID ? 'bg-green-100 text-green-800 border-green-200' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>{inv.status}</span></td><td className="px-6 py-4 text-right"><button onClick={() => setIsEditingInvoice(inv.id)} className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded hover:border-cyan-500 text-slate-400 hover:text-cyan-500 transition-colors"><Edit3 className="w-4 h-4" /></button></td></tr>
                   ))}</tbody>
               </table>
           </div>
@@ -274,7 +274,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
           <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-220px)]">
               
               {/* LEFT: PARTNER LIST */}
-              <div className="w-full lg:w-1/3 glass-card rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden flex flex-col">
+              <div className="w-full lg:w-1/3 glass-card rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden flex flex-col bg-white dark:bg-[#1c1b22]">
                   <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-white/5 font-bold text-slate-700 dark:text-slate-200">
                       Active Communities ({partners.length})
                   </div>
@@ -310,7 +310,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                   {selectedPartnerCode ? (
                       <>
                           {/* Agreements List */}
-                          <div className="glass-card p-6 rounded-xl border border-slate-200 dark:border-white/5">
+                          <div className="glass-card p-6 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#1c1b22]">
                               <div className="flex justify-between items-center mb-6">
                                   <div>
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -362,7 +362,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                                                     <div className="text-slate-400 mb-0.5">Documents</div>
                                                     <div className="font-medium text-slate-700 dark:text-slate-300 flex flex-wrap gap-1">
                                                         {agr.documents && agr.documents.length > 0 ? agr.documents.map((d,i) => (
-                                                            <span key={i} className="underline cursor-pointer hover:text-indigo-500 truncate max-w-[80px] block">{d}</span>
+                                                            <span key={i} className="flex items-center gap-1 underline cursor-pointer hover:text-indigo-500 truncate max-w-[80px] block"><Paperclip className="w-3 h-3"/> {d}</span>
                                                         )) : '-'}
                                                     </div>
                                                 </div>
@@ -391,7 +391,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
       {editingAgreement && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[100] p-4">
               <div className="bg-white dark:bg-[#1c1b22] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-3xl animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-                  <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-inherit z-10">
+                  <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-white dark:bg-[#1c1b22] z-10 rounded-t-2xl">
                      <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                         {editingAgreement === 'new' ? 'Create Partner Agreement' : 'Edit Agreement'}
                      </h3>
@@ -416,7 +416,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                               <button 
                                 type="button"
                                 onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
-                                className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] flex justify-between items-center"
+                                className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] flex justify-between items-center shadow-sm"
                               >
                                   {admins.find(a => a.id === tempAgreement.assignedAdminId)?.name || "Select Responsible Person..."}
                                   <ChevronDown className="w-4 h-4 text-slate-400" />
@@ -432,7 +432,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                                                   placeholder="Search admin..."
                                                   value={adminSearch}
                                                   onChange={e => setAdminSearch(e.target.value)}
-                                                  className="w-full pl-7 p-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded border border-transparent focus:border-[#2a00ff] outline-none text-white"
+                                                  className="w-full pl-7 p-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded border border-transparent focus:border-[#2a00ff] outline-none text-slate-900 dark:text-white"
                                               />
                                           </div>
                                       </div>
@@ -450,7 +450,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                                                           <div className="font-medium text-slate-900 dark:text-white">{a.name}</div>
                                                           <div className="text-xs text-slate-500">{a.email}</div>
                                                       </div>
-                                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${a.role === UserRole.SUPER_ADMIN ? 'bg-purple-50 text-purple-600' : 'bg-green-50 text-green-600'}`}>
+                                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${a.role === UserRole.SUPER_ADMIN ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-300'}`}>
                                                           {a.role === UserRole.SUPER_ADMIN ? 'Global' : 'Assigned'}
                                                       </span>
                                                   </button>
@@ -469,7 +469,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                               value={tempAgreement.description || ''}
                               onChange={e => setTempAgreement({...tempAgreement, description: e.target.value})}
                               placeholder="e.g. 2025 Strategic Growth Contract"
-                              className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff]"
+                              className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] shadow-sm"
                           />
                       </div>
 
@@ -477,14 +477,14 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                       <div className="grid grid-cols-3 gap-4">
                           <div>
                               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Start Date</label>
-                              <input type="date" value={tempAgreement.startDate || ''} onChange={e => setTempAgreement({...tempAgreement, startDate: e.target.value})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff]" />
+                              <input type="date" value={tempAgreement.startDate || ''} onChange={e => setTempAgreement({...tempAgreement, startDate: e.target.value})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] shadow-sm" />
                           </div>
                           <div>
                               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">End Date (Optional)</label>
-                              <input type="date" value={tempAgreement.endDate || ''} onChange={e => setTempAgreement({...tempAgreement, endDate: e.target.value})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff]" />
+                              <input type="date" value={tempAgreement.endDate || ''} onChange={e => setTempAgreement({...tempAgreement, endDate: e.target.value})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] shadow-sm" />
                           </div>
                           <div className="flex items-end pb-3">
-                              <label className="flex items-center gap-2 cursor-pointer">
+                              <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800">
                                   <input type="checkbox" checked={tempAgreement.isActive} onChange={e => setTempAgreement({...tempAgreement, isActive: e.target.checked})} className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500" />
                                   <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Agreement Active</span>
                               </label>
@@ -497,28 +497,28 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                           <div className="grid grid-cols-3 gap-4 mb-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-1">Payment Model</label>
-                                <select value={tempAgreement.paymentModel} onChange={e => setTempAgreement({...tempAgreement, paymentModel: e.target.value as any})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff]">
+                                <select value={tempAgreement.paymentModel} onChange={e => setTempAgreement({...tempAgreement, paymentModel: e.target.value as any})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] shadow-sm">
                                     <option value="Per_Certification">Per Certification</option>
                                     <option value="Fixed_Recurring">Fixed Recurring</option>
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-1">Amount</label>
-                                <input type="number" value={tempAgreement.unitPrice} onChange={e => setTempAgreement({...tempAgreement, unitPrice: Number(e.target.value)})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff]" />
+                                <input type="number" value={tempAgreement.unitPrice} onChange={e => setTempAgreement({...tempAgreement, unitPrice: Number(e.target.value)})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] shadow-sm" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-1">Currency</label>
-                                <select value={tempAgreement.currency} onChange={e => setTempAgreement({...tempAgreement, currency: e.target.value as any})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff]"><option>USD</option><option>HBAR</option><option>USDC</option><option>EUR</option></select>
+                                <select value={tempAgreement.currency} onChange={e => setTempAgreement({...tempAgreement, currency: e.target.value as any})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] shadow-sm"><option>USD</option><option>HBAR</option><option>USDC</option><option>EUR</option></select>
                             </div>
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                               <div>
                                   <label className="block text-xs font-bold text-slate-500 mb-1">Billing Contact Email</label>
-                                  <input value={tempAgreement.contactEmail || ''} onChange={e => setTempAgreement({...tempAgreement,contactEmail: e.target.value})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff]" />
+                                  <input value={tempAgreement.contactEmail || ''} onChange={e => setTempAgreement({...tempAgreement,contactEmail: e.target.value})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] shadow-sm" />
                               </div>
                               <div>
                                   <label className="block text-xs font-bold text-slate-500 mb-1">Billing Cycle</label>
-                                  <select value={tempAgreement.billingCycle} onChange={e => setTempAgreement({...tempAgreement, billingCycle: e.target.value as any})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff]">
+                                  <select value={tempAgreement.billingCycle} onChange={e => setTempAgreement({...tempAgreement, billingCycle: e.target.value as any})} className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] shadow-sm">
                                       <option value="Monthly">Monthly</option>
                                       <option value="Quarterly">Quarterly</option>
                                   </select>
@@ -534,9 +534,11 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                                   value={tempDoc} 
                                   onChange={e => setTempDoc(e.target.value)} 
                                   placeholder="Document Name or URL..."
-                                  className="flex-1 p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff]"
+                                  className="flex-1 p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#2a00ff] shadow-sm"
                               />
-                              <button onClick={handleAddDocument} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600">Attach</button>
+                              <button onClick={handleAddDocument} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600 flex items-center gap-2">
+                                  <Paperclip className="w-4 h-4" /> Attach
+                              </button>
                           </div>
                           <div className="flex flex-wrap gap-2 mt-2">
                               {tempAgreement.documents?.map((d, i) => (
@@ -549,7 +551,7 @@ export const Invoicing: React.FC<InvoicingProps> = ({ data, admins, invoices, se
                       </div>
 
                   </div>
-                  <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 sticky bottom-0 bg-inherit z-10">
+                  <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-[#1c1b22] rounded-b-2xl">
                       <button onClick={() => setEditingAgreement(null)} className="px-4 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors">Cancel</button>
                       <button onClick={handleSaveAgreement} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 transition-colors">Save Agreement</button>
                   </div>

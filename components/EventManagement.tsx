@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { Calendar, MapPin, Users, Search, Mail, Plus, Save, Video, Target, UserPlus, X, ExternalLink, Globe, AlertTriangle, Clock } from 'lucide-react';
 import { DeveloperRecord, CommunityEvent } from '../types';
