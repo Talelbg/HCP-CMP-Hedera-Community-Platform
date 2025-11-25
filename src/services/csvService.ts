@@ -6,6 +6,12 @@ export interface CsvImportResult {
   errors: string[];
 }
 
+// Normalize header for matching: lowercase, trim, collapse spaces
+export const normalizeHeader = (header: string): string => {
+  return header.toLowerCase().trim().replace(/\s+/g, ' ');
+};
+
+// Required headers with their normalized forms for matching
 const REQUIRED_HEADERS_CORE = [
   "Email", "First Name", "Last Name", "Phone Number", "Country",
   "Accepted Membership", "Accepted Marketing", "Wallet Address",
@@ -13,39 +19,103 @@ const REQUIRED_HEADERS_CORE = [
   "Completed At", "Final Score", "Final Grade", "CA Status"
 ];
 
-// Helper to check for Partner Code logic
-const hasPartnerCodeColumns = (headers: string[]) => {
-    if (headers.includes("Partner Code")) return true;
-    if (headers.includes("Code") && headers.includes("Partner")) return true;
+// Find a header in CSV headers using case-insensitive matching
+export const findHeader = (headers: string[], targetHeader: string): string | undefined => {
+  const normalizedTarget = normalizeHeader(targetHeader);
+  return headers.find(h => normalizeHeader(h) === normalizedTarget);
+};
+
+// Check if a header exists in CSV headers using case-insensitive matching
+export const hasHeader = (headers: string[], targetHeader: string): boolean => {
+  return findHeader(headers, targetHeader) !== undefined;
+};
+
+// Helper to check for Partner Code logic (case-insensitive)
+export const hasPartnerCodeColumns = (headers: string[]) => {
+    if (hasHeader(headers, "Partner Code")) return true;
+    if (hasHeader(headers, "Code") && hasHeader(headers, "Partner")) return true;
     return false;
 };
 
-const mapCsvRowToRecord = (row: any): Omit<DeveloperRecord, 'id'> => {
-  // Logic to resolve partner code
+// Get value from row using case-insensitive header matching
+export const getRowValue = (row: any, headers: string[], targetHeader: string): any => {
+  const actualHeader = findHeader(headers, targetHeader);
+  return actualHeader ? row[actualHeader] : undefined;
+};
+
+const mapCsvRowToRecord = (row: any, headers: string[]): Omit<DeveloperRecord, 'id'> => {
+  // Logic to resolve partner code (case-insensitive)
   let partnerCode = 'UNKNOWN';
-  if (row['Partner Code']) {
-      partnerCode = row['Partner Code'];
-  } else if (row['Code']) {
-      partnerCode = row['Code'];
+  const partnerCodeValue = getRowValue(row, headers, 'Partner Code');
+  const codeValue = getRowValue(row, headers, 'Code');
+  
+  if (partnerCodeValue) {
+      partnerCode = partnerCodeValue;
+  } else if (codeValue) {
+      partnerCode = codeValue;
   }
 
+  const acceptedMembershipValue = getRowValue(row, headers, 'Accepted Membership');
+  const acceptedMarketingValue = getRowValue(row, headers, 'Accepted Marketing');
+
   return {
-    email: row['Email'] || '',
-    firstName: row['First Name'] || '',
-    lastName: row['Last Name'] || '',
-    phone: row['Phone Number'] || '',
-    country: row['Country'] || '',
-    acceptedMembership: String(row['Accepted Membership']).toLowerCase() === 'true' || row['Accepted Membership'] === '1',
-    acceptedMarketing: String(row['Accepted Marketing']).toLowerCase() === 'true' || row['Accepted Marketing'] === '1',
-    walletAddress: row['Wallet Address'] || '',
+    email: getRowValue(row, headers, 'Email') || '',
+    firstName: getRowValue(row, headers, 'First Name') || '',
+    lastName: getRowValue(row, headers, 'Last Name') || '',
+    phone: getRowValue(row, headers, 'Phone Number') || '',
+    country: getRowValue(row, headers, 'Country') || '',
+    acceptedMembership: String(acceptedMembershipValue).toLowerCase() === 'true' || acceptedMembershipValue === '1',
+    acceptedMarketing: String(acceptedMarketingValue).toLowerCase() === 'true' || acceptedMarketingValue === '1',
+    walletAddress: getRowValue(row, headers, 'Wallet Address') || '',
     partnerCode: partnerCode,
-    percentageCompleted: Number(row['Percentage Completed']) || 0,
-    createdAt: row['Created At'] || new Date().toISOString(),
-    completedAt: row['Completed At'] || null,
-    finalScore: Number(row['Final Score']) || 0,
-    finalGrade: (row['Final Grade'] as any) || 'Pending',
-    caStatus: row['CA Status'] || '',
+    percentageCompleted: Number(getRowValue(row, headers, 'Percentage Completed')) || 0,
+    createdAt: getRowValue(row, headers, 'Created At') || new Date().toISOString(),
+    completedAt: getRowValue(row, headers, 'Completed At') || null,
+    finalScore: Number(getRowValue(row, headers, 'Final Score')) || 0,
+    finalGrade: (getRowValue(row, headers, 'Final Grade') as any) || 'Pending',
+    caStatus: getRowValue(row, headers, 'CA Status') || '',
   };
+};
+
+// Process parsed CSV data into CsvImportResult
+const processParsedData = (results: Papa.ParseResult<any>): CsvImportResult => {
+  const headers = results.meta.fields || [];
+
+  // Check Core Headers (case-insensitive)
+  const missingHeaders = REQUIRED_HEADERS_CORE.filter(h => !hasHeader(headers, h));
+
+  // Check Partner/Code logic (case-insensitive)
+  if (!hasPartnerCodeColumns(headers)) {
+      missingHeaders.push("Partner Code (or 'Partner' and 'Code' columns)");
+  }
+
+  if (missingHeaders.length > 0) {
+    return {
+      validRecords: [],
+      errors: [`Missing required columns: ${missingHeaders.join(', ')}`]
+    };
+  }
+
+  const validRecords: Omit<DeveloperRecord, 'id'>[] = [];
+  const errors: string[] = [];
+
+  results.data.forEach((row: any, index) => {
+     // Basic validation (case-insensitive)
+     const emailValue = getRowValue(row, headers, 'Email');
+     if (!emailValue) {
+         errors.push(`Row ${index + 2}: Missing Email`);
+         return;
+     }
+
+     try {
+         const record = mapCsvRowToRecord(row, headers);
+         validRecords.push(record);
+     } catch (e) {
+         errors.push(`Row ${index + 2}: Error parsing data`);
+     }
+  });
+
+  return { validRecords, errors };
 };
 
 export const csvService = {
@@ -55,48 +125,20 @@ export const csvService = {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          const headers = results.meta.fields || [];
-
-          // Check Core Headers
-          const missingHeaders = REQUIRED_HEADERS_CORE.filter(h => !headers.includes(h));
-
-          // Check Partner/Code logic
-          if (!hasPartnerCodeColumns(headers)) {
-              missingHeaders.push("Partner Code (or 'Partner' and 'Code' columns)");
-          }
-
-          if (missingHeaders.length > 0) {
-            resolve({
-              validRecords: [],
-              errors: [`Missing required columns: ${missingHeaders.join(', ')}`]
-            });
-            return;
-          }
-
-          const validRecords: Omit<DeveloperRecord, 'id'>[] = [];
-          const errors: string[] = [];
-
-          results.data.forEach((row: any, index) => {
-             // Basic validation
-             if (!row['Email']) {
-                 errors.push(`Row ${index + 2}: Missing Email`);
-                 return;
-             }
-
-             try {
-                 const record = mapCsvRowToRecord(row);
-                 validRecords.push(record);
-             } catch (e) {
-                 errors.push(`Row ${index + 2}: Error parsing data`);
-             }
-          });
-
-          resolve({ validRecords, errors });
+          resolve(processParsedData(results));
         },
         error: (error) => {
           reject(error);
         }
       });
     });
+  },
+
+  /**
+   * Parses a CSV string directly (useful for testing).
+   */
+  parseString: (csvString: string): CsvImportResult => {
+    const results = Papa.parse(csvString, { header: true, skipEmptyLines: true });
+    return processParsedData(results);
   }
 };
