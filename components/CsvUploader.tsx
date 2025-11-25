@@ -1,11 +1,9 @@
 
 import React, { useRef, useState } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, Loader2, AlertTriangle, History, Trash2, Database, Cloud, CloudUpload } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, Loader2, AlertTriangle, History, Trash2, Database, Save } from 'lucide-react';
 import { DeveloperRecord, DatasetVersion } from '../types';
 import { processIngestedData } from '../services/dataProcessing';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc } from 'firebase/firestore';
-import { storage, db } from '../firebaseConfig';
+import { LocalDB } from '../services/localDatabase';
 
 interface CsvUploaderProps {
   onDataLoaded: (data: DeveloperRecord[], fileName: string) => void;
@@ -24,39 +22,37 @@ export const CsvUploader: React.FC<CsvUploaderProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState('');
   const [fileName, setFileName] = useState<string | null>(null);
   const [loadedCount, setLoadedCount] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // --- CLOUD SYNC LOGIC ---
-  const saveToCloud = async (file: File, count: number) => {
+  // --- LOCAL DB SYNC LOGIC ---
+  const saveToLocalDb = (fName: string, data: DeveloperRecord[]) => {
       try {
-          setIsCloudSyncing(true);
-          console.log("Starting Cloud Sync...");
+          setIsSaving(true);
           
-          // 1. Upload File to Firebase Storage
-          const storageRef = ref(storage, `datasets/${Date.now()}_${file.name}`);
-          await uploadBytes(storageRef, file);
-          const downloadURL = await getDownloadURL(storageRef);
-          
-          // 2. Register Metadata in Firestore
-          await addDoc(collection(db, 'dataset_versions'), {
-              fileName: file.name,
-              storageUrl: downloadURL,
+          const newVersion: DatasetVersion = {
+              id: `ver_${Date.now()}`,
+              fileName: fName,
               uploadDate: new Date().toISOString(),
-              recordCount: count,
-              uploadedBy: 'Super Admin' // Placeholder for Auth Context
-          });
+              recordCount: data.length,
+              data: data
+          };
 
-          console.log("Cloud Sync Complete:", downloadURL);
-          setIsCloudSyncing(false);
+          LocalDB.saveDatasetVersion(newVersion);
+          
+          // Notify parent to reload versions list if needed, 
+          // though usually parent manages state. 
+          // In this app structure, App.tsx manages the state, 
+          // so we rely on onDataLoaded to pass data up.
+          
+          setIsSaving(false);
       } catch (error) {
-          console.error("Cloud Sync Failed:", error);
-          setIsCloudSyncing(false);
-          // We don't block the UI flow for this, it's a background process
+          console.error("Local Save Failed:", error);
+          setIsSaving(false);
       }
   };
 
@@ -258,7 +254,7 @@ export const CsvUploader: React.FC<CsvUploaderProps> = ({
     const fName = file.name;
     setFileName(fName);
     setIsProcessing(true);
-    setIsCloudSyncing(false);
+    setIsSaving(false);
     setProgress(0);
     setLoadedCount(0);
     setErrorMsg(null);
@@ -284,13 +280,15 @@ export const CsvUploader: React.FC<CsvUploaderProps> = ({
             setTimeout(() => {
                 const processed = processIngestedData(rawData);
                 setLoadedCount(processed.length);
+                
+                // 1. Pass data to parent (App) to render immediately
                 onDataLoaded(processed, fName); 
+                
+                // 2. Persist to LocalDB
+                saveToLocalDb(fName, processed);
+
                 setIsProcessing(false);
                 setStatusMessage('Complete');
-                
-                // TRIGGER CLOUD SYNC
-                saveToCloud(file, processed.length);
-
             }, 50);
 
         } catch (err: any) {
@@ -332,7 +330,7 @@ export const CsvUploader: React.FC<CsvUploaderProps> = ({
                 ) : isProcessing ? (
                     statusMessage
                 ) : (
-                    "Upload the Master CSV (Max 100MB). Auto-detects 'Email' & 'Code', fixes timestamps, flags fraud, and syncs to Cloud."
+                    "Upload the Master CSV (Max 100MB). Auto-detects 'Email' & 'Code', fixes timestamps, flags fraud, and saves to Local DB."
                 )}
             </p>
             </div>
@@ -371,13 +369,13 @@ export const CsvUploader: React.FC<CsvUploaderProps> = ({
                         {loadedCount.toLocaleString()} records loaded successfully.
                     </div>
                     
-                    {isCloudSyncing ? (
+                    {isSaving ? (
                          <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-bold animate-pulse">
-                             <CloudUpload className="w-3 h-3" /> Syncing to Hedera Cloud...
+                             <Save className="w-3 h-3" /> Saving to Local Database...
                          </div>
                     ) : (
                          <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-                             <Cloud className="w-3 h-3" /> Saved to Firebase Cloud
+                             <Database className="w-3 h-3" /> Saved to Browser Storage
                          </div>
                     )}
                 </div>
@@ -397,7 +395,7 @@ export const CsvUploader: React.FC<CsvUploaderProps> = ({
              <div className="bg-white dark:bg-[#1c1b22] rounded-xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden animate-fade-in">
                  <div className="px-6 py-4 border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex items-center gap-2">
                      <History className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                     <h3 className="font-bold text-slate-800 dark:text-white">Dataset Version History</h3>
+                     <h3 className="font-bold text-slate-800 dark:text-white">Local Dataset History</h3>
                  </div>
                  <table className="w-full text-sm text-left">
                      <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-medium">

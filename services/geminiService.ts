@@ -1,10 +1,13 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { DashboardMetrics } from '../types';
 
 const getAiClient = () => {
+  // Standard process.env usage for API key
   const apiKey = process.env.API_KEY;
+  
   if (!apiKey) {
-    console.warn("Gemini Service: No API Key found in process.env.API_KEY");
+    console.warn("Gemini Service: No API Key found in process.env.API_KEY.");
     return null;
   }
   try {

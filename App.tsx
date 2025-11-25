@@ -21,28 +21,32 @@ import {
   OutreachCampaign, 
   CommunityMasterRecord 
 } from './types';
-import { MOCK_ADMIN_TEAM } from './constants';
 import { Database, ChevronDown, Layers, Sun, Moon, CheckCircle } from 'lucide-react';
+import { LocalDB } from './services/localDatabase';
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
+  
+  // Loaded from LocalDB
   const [versions, setVersions] = useState<DatasetVersion[]>([]);
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
+  
   const [viewParams, setViewParams] = useState<any>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
 
-  // --- GLOBAL PERSISTENT STATE ---
-  const [admins, setAdmins] = useState<AdminUser[]>(MOCK_ADMIN_TEAM);
+  // --- GLOBAL PERSISTENT STATE (Loaded from LocalDB) ---
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [agreements, setAgreements] = useState<CommunityAgreement[]>([]);
   const [events, setEvents] = useState<CommunityEvent[]>([]);
   const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([]);
   const [masterRegistry, setMasterRegistry] = useState<CommunityMasterRecord[]>([]);
 
+  // --- INITIALIZATION: Load from Local Database ---
   useEffect(() => {
+    // Theme
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       setIsDarkMode(true);
       document.documentElement.classList.add('dark');
@@ -50,7 +54,29 @@ function App() {
       setIsDarkMode(false);
       document.documentElement.classList.remove('dark');
     }
+
+    // Load Data
+    setAdmins(LocalDB.getAdmins());
+    setInvoices(LocalDB.getInvoices());
+    setAgreements(LocalDB.getAgreements());
+    setEvents(LocalDB.getEvents());
+    setCampaigns(LocalDB.getCampaigns());
+    setMasterRegistry(LocalDB.getMasterRegistry());
+    
+    const savedVersions = LocalDB.getDatasetVersions();
+    setVersions(savedVersions);
+    if (savedVersions.length > 0) {
+        setActiveVersionId(savedVersions[0].id);
+    }
   }, []);
+
+  // --- PERSISTENCE EFFECTS ---
+  useEffect(() => { if(admins.length) LocalDB.saveAdmins(admins); }, [admins]);
+  useEffect(() => { if(invoices.length) LocalDB.saveInvoices(invoices); }, [invoices]);
+  useEffect(() => { if(agreements.length) LocalDB.saveAgreements(agreements); }, [agreements]);
+  useEffect(() => { if(events.length) LocalDB.saveEvents(events); }, [events]);
+  useEffect(() => { if(campaigns.length) LocalDB.saveCampaigns(campaigns); }, [campaigns]);
+  useEffect(() => { if(masterRegistry.length) LocalDB.saveMasterRegistry(masterRegistry); }, [masterRegistry]);
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
@@ -75,20 +101,32 @@ function App() {
   }, [versions, activeVersionId]);
 
   // Assume First Admin is Current User for Demo
-  const currentUser = admins[0];
+  const currentUser = admins.length > 0 ? admins[0] : {
+      id: 'admin_default', name: 'Super Admin', email: 'admin@hedera.com', role: 'Super Admin (HQ)', assignedCodes: [], lastLogin: new Date().toISOString(), status: 'Active'
+  } as AdminUser;
 
   const handleUpdateProfile = (updatedUser: AdminUser) => {
       setAdmins(admins.map(a => a.id === updatedUser.id ? updatedUser : a));
   };
 
   const handleDataLoaded = (newData: DeveloperRecord[], fileName: string) => {
-    const newVersion: DatasetVersion = { id: `ver_${Date.now()}`, fileName, uploadDate: new Date().toISOString(), recordCount: newData.length, data: newData };
+    // Update State (LocalDB Save is handled inside CsvUploader)
+    // We reload versions from DB to ensure sync, or construct object
+    const newVersion: DatasetVersion = { 
+        id: `ver_${Date.now()}`, 
+        fileName, 
+        uploadDate: new Date().toISOString(), 
+        recordCount: newData.length, 
+        data: newData 
+    };
     setVersions(prev => [newVersion, ...prev]);
     setActiveVersionId(newVersion.id);
   };
 
   const handleSwitchVersion = (id: string) => setActiveVersionId(id);
+  
   const handleDeleteVersion = (id: string) => {
+      LocalDB.deleteDatasetVersion(id); // Delete from DB
       const newVersions = versions.filter(v => v.id !== id);
       setVersions(newVersions);
       if (activeVersionId === id) setActiveVersionId(newVersions.length > 0 ? newVersions[0].id : null);
