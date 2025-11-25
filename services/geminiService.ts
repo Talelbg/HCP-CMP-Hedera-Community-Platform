@@ -3,7 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { DashboardMetrics } from '../types';
 
 const getAiClient = () => {
-  // Standard process.env usage for API key
+  // Access the API key from process.env as per guidelines.
+  // The key's availability is handled externally.
   const apiKey = process.env.API_KEY;
   
   if (!apiKey) {
